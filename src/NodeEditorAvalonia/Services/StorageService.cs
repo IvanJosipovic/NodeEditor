@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
-using Avalonia.VisualTree;
 
 namespace NodeEditor.Services;
 
@@ -65,8 +64,8 @@ public static class StorageService
 
         if (Application.Current?.ApplicationLifetime is ISingleViewApplicationLifetime { MainView: { } mainView })
         {
-            var visualRoot = mainView.GetVisualRoot();
-            if (visualRoot is TopLevel topLevel)
+            var topLevel = TopLevel.GetTopLevel(mainView);
+            if (topLevel is not null)
             {
                 return topLevel.StorageProvider;
             }
