@@ -17,7 +17,7 @@
   </Window.KeyBindings>
   <DockPanel Margin="16">
     <TextBox DockPanel.Dock="Top"
-             Watermark="Filter macros..."
+             PlaceholderText="Filter macros..."
              Text="{Binding Filter, UpdateSourceTrigger=PropertyChanged}" />
     <ListBox ItemsSource="{Binding FilteredMacros}"
              SelectedItem="{Binding SelectedMacro}"

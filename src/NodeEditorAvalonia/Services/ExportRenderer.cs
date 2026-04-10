@@ -1,13 +1,9 @@
 using System;
 using System.IO;
-#if NET6_0_OR_GREATER
-using System.Reflection;
-#endif
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 #if NET6_0_OR_GREATER
-using Avalonia.Media;
 using Avalonia.Skia.Helpers;
 using SkiaSharp;
 #endif
@@ -17,144 +13,12 @@ namespace NodeEditor.Services;
 public static class ExportRenderer
 {
 #if NET6_0_OR_GREATER
-    private static MethodInfo? _immediateRenderMethod;
-    private static int _immediateRenderParameterCount;
-
     private static void Render(Control target, SKCanvas canvas, double dpi = 96)
     {
-        using var drawingContextImpl = DrawingContextHelper.WrapSkiaCanvas(canvas, new Vector(dpi, dpi));
-        var platformDrawingContextType = typeof(DrawingContext).Assembly.GetType("Avalonia.Media.PlatformDrawingContext");
-        if (platformDrawingContextType is not null)
-        {
-            var drawingContext = (DrawingContext?)Activator.CreateInstance(
-                platformDrawingContextType,
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                null,
-                new object?[] { drawingContextImpl, true },
-                null);
-            if (drawingContext is not null)
-            {
-                if (!TryImmediateRender(target, drawingContext))
-                {
-                    throw new NotSupportedException("Immediate renderer was not found.");
-                }
-            }
-        }
-        else
-        {
-            throw new NotSupportedException("Platform drawing context type was not found.");
-        }
-    }
-
-    private static bool TryImmediateRender(Control target, DrawingContext drawingContext)
-    {
-        _immediateRenderMethod ??= ResolveImmediateRenderMethod();
-        if (_immediateRenderMethod is null)
-        {
-            return false;
-        }
-
-        var parameterCount = _immediateRenderParameterCount;
-        if (parameterCount <= 2)
-        {
-            _immediateRenderMethod.Invoke(null, new object?[] { target, drawingContext });
-            return true;
-        }
-
-        var args = new object?[parameterCount];
-        args[0] = target;
-        args[1] = drawingContext;
-        for (var i = 2; i < parameterCount; i++)
-        {
-            args[i] = Type.Missing;
-        }
-
-        _immediateRenderMethod.Invoke(null, args);
-        return true;
-    }
-
-    private static MethodInfo? ResolveImmediateRenderMethod()
-    {
-        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-        {
-            var type = assembly.GetType("Avalonia.Rendering.ImmediateRenderer", throwOnError: false)
-                       ?? FindTypeByName(assembly, "ImmediateRenderer");
-
-            if (type is null)
-            {
-                continue;
-            }
-
-            foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (!string.Equals(method.Name, "Render", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                var parameters = method.GetParameters();
-                if (parameters.Length < 2)
-                {
-                    continue;
-                }
-
-                if (!parameters[0].ParameterType.IsAssignableFrom(typeof(Control)))
-                {
-                    continue;
-                }
-
-                if (!parameters[1].ParameterType.IsAssignableFrom(typeof(DrawingContext)))
-                {
-                    continue;
-                }
-
-                var valid = true;
-                for (var i = 2; i < parameters.Length; i++)
-                {
-                    if (!parameters[i].IsOptional)
-                    {
-                        valid = false;
-                        break;
-                    }
-                }
-
-                if (!valid)
-                {
-                    continue;
-                }
-
-                _immediateRenderParameterCount = parameters.Length;
-                return method;
-            }
-        }
-
-        return null;
-    }
-
-    private static Type? FindTypeByName(Assembly assembly, string name)
-    {
-        try
-        {
-            foreach (var type in assembly.GetTypes())
-            {
-                if (type.Name == name)
-                {
-                    return type;
-                }
-            }
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            foreach (var type in ex.Types)
-            {
-                if (type?.Name == name)
-                {
-                    return type;
-                }
-            }
-        }
-
-        return null;
+        DrawingContextHelper
+            .RenderAsync(canvas, target, new Rect(target.Bounds.Size), new Vector(dpi, dpi))
+            .GetAwaiter()
+            .GetResult();
     }
 #endif
 

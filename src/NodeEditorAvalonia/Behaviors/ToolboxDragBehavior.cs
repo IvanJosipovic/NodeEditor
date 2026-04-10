@@ -54,6 +54,7 @@ public class ToolboxDragBehavior : Behavior<Control>
         AvaloniaProperty.Register<ToolboxDragBehavior, double>(nameof(DragThreshold), 6);
 
     private Point? _dragStart;
+    private PointerPressedEventArgs? _dragStartEvent;
     private bool _dragging;
 
     public double DragThreshold
@@ -105,12 +106,14 @@ public class ToolboxDragBehavior : Behavior<Control>
         }
 
         _dragStart = e.GetPosition(AssociatedObject);
+        _dragStartEvent = e;
         e.Pointer.Capture(AssociatedObject);
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         _dragStart = null;
+        _dragStartEvent = null;
         _dragging = false;
         if (AssociatedObject is not null && Equals(e.Pointer.Captured, AssociatedObject))
         {
@@ -121,12 +124,13 @@ public class ToolboxDragBehavior : Behavior<Control>
     private void OnPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
         _dragStart = null;
+        _dragStartEvent = null;
         _dragging = false;
     }
 
     private async void OnPointerMoved(object? sender, PointerEventArgs e)
     {
-        if (_dragStart is null || _dragging || AssociatedObject is null)
+        if (_dragStart is null || _dragStartEvent is null || _dragging || AssociatedObject is null)
         {
             return;
         }
@@ -134,6 +138,7 @@ public class ToolboxDragBehavior : Behavior<Control>
         if (!e.GetCurrentPoint(AssociatedObject).Properties.IsLeftButtonPressed)
         {
             _dragStart = null;
+            _dragStartEvent = null;
             return;
         }
 
@@ -148,11 +153,14 @@ public class ToolboxDragBehavior : Behavior<Control>
         if (AssociatedObject.DataContext is not INodeTemplate template)
         {
             _dragStart = null;
+            _dragStartEvent = null;
             return;
         }
 
         _dragging = true;
         _dragStart = null;
+        var dragStartEvent = _dragStartEvent;
+        _dragStartEvent = null;
 
         try
         {
@@ -176,7 +184,7 @@ public class ToolboxDragBehavior : Behavior<Control>
 
             data.Add(item);
 
-            await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Copy);
+            await DragDrop.DoDragDropAsync(dragStartEvent, data, DragDropEffects.Copy);
         }
         finally
         {

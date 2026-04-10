@@ -40,5 +40,6 @@ class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .LogToTrace()
-            .UseSkia();
+            .UseSkia()
+            .UseHarfBuzz();
 }
