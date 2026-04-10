@@ -102,7 +102,7 @@
                            DockPanel.Dock="Top" />
             </DockPanel>
             <Label Content="Label:" DockPanel.Dock="Top" />
-            <TextBox Text="{Binding ConnectorSource.Name}" Watermark="Label" DockPanel.Dock="Top" />
+            <TextBox Text="{Binding ConnectorSource.Name}" PlaceholderText="Label" DockPanel.Dock="Top" />
           </DockPanel>
         </Flyout>
       </Setter.Value>
